@@ -1,33 +1,38 @@
 #[cfg(test)]
 mod tests {
-
     use learning::configuration::get_configuration;
     use learning::startup;
     use reqwest::Client;
-    use sqlx::{Connection, PgConnection};
+    use sqlx::{PgPool};
     use std::net::TcpListener;
 
-    fn spawn_app() -> String {
+    struct TestApp {
+        address: String,
+        db_pool: PgPool
+    }
+    async fn spawn_app() -> TestApp {
         let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
+        let configuration = get_configuration().expect("Failed to load configuration");
         let port = listener.local_addr().unwrap().port();
-        let server = startup::run(listener).expect("Failed to bind address");
+        let connection = PgPool::connect(&configuration.database.connection_string())
+            .await
+            .expect("Failed to connect to Postgres db");
+        let server = startup::run(listener, connection.clone()).expect("Failed to bind address");
         let _ = actix_rt::spawn(server);
-
-        format!("http://127.0.0.1:{}", port)
+        TestApp {
+            address: format!("http://127.0.0.1:{}", port),
+            db_pool: connection
+        }
     }
-
-    fn get_app_address_and_client() -> (String, Client) {
-        let app_address = spawn_app();
-        let client = Client::new();
-        (app_address, client)
-    }
+    
     #[actix_web::test]
     async fn health_check_works() {
-        let address = spawn_app();
-        let client = Client::new();
+        
+        let app = spawn_app()
+            .await;
 
-        let response = client
-            .get(&format!("{}/healthcheck", &address))
+        let response = Client::new()
+            .get(&format!("{}/healthcheck", &app.address))
             .send()
             .await
             .expect("Failed to execute request.");
@@ -38,18 +43,13 @@ mod tests {
 
     #[actix_web::test]
     async fn subscribe_returns_a_200_for_valid_form_data() {
-        let (app_address, client) = get_app_address_and_client();
+       let client = Client::new();
 
-        // connect to db
-        let configuration = get_configuration().expect("Failed to read configuration");
-        let connection_string = configuration.database.connection_string();
-        let mut connection = PgConnection::connect(&connection_string)
-            .await
-            .expect("Failed to connect to Postgres.");
+        let app = spawn_app().await;
 
         let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
         let response = client
-            .post(&format!("{}/subscribe", &app_address))
+            .post(&format!("{}/subscribe", &app.address))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(body)
             .send()
@@ -58,8 +58,8 @@ mod tests {
 
         assert_eq!(200, response.status().as_u16());
 
-        let saved = sqlx::query!("SELECT email, name, auieau FROM subscriptions")
-            .fetch_one(&mut connection)
+        let saved = sqlx::query!("SELECT email, name FROM subscriptions")
+            .fetch_one(&app.db_pool)
             .await
             .expect("Failed to fetch saved subscription");
 
@@ -69,7 +69,8 @@ mod tests {
 
     #[actix_web::test]
     async fn subscribe_returns_a_400_when_data_is_missing() {
-        let (app_address, client) = get_app_address_and_client();
+        let client = Client::new();
+        let app = spawn_app().await;
         let test_cases = vec![
             ("name=le%20guin", "missing the email"),
             ("email=ursula_le_guin%40gmail.com", "missing the name"),
@@ -78,7 +79,7 @@ mod tests {
 
         for (invalid_body, error_message) in test_cases {
             let response = client
-                .post(&format!("{}/subscribe", &app_address))
+                .post(&format!("{}/subscribe", &app.address))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .body(invalid_body)
                 .send()
