@@ -1,0 +1,32 @@
+[package]
+name = "learning"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "learning"
+
+[dependencies]
+actix-web = "4"
+dotenv = "0.15.0"
+env_logger = "0.11.8"
+actix-rt = "2.10.0"
+serde = { version = "1.0.219", features = ["derive"] }
+config = "0.15.11"
+
+[dependencies.sqlx]
+version="0.8.5"
+default-features = false
+features = ["runtime-tokio-rustls",
+    "macros",
+"postgres",
+"uuid",
+"chrono",
+"migrate"]
+
+[dev-dependencies]
+reqwest = "0.12.15"
