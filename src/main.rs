@@ -1,13 +1,15 @@
 mod routes;
 mod startup;
 use crate::configuration::get_configuration;
+use sqlx::PgPool;
 use std::net::TcpListener;
-use sqlx::{PgPool};
-
 mod configuration;
+use learning::telemetry::{get_subscriber, init_subscriber};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let subscriber = get_subscriber("learning".into(), "info".into(), std::io::stdout);
+    init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to read configuration.");
     let db_pool = PgPool::connect(&configuration.database.connection_string())
         .await
