@@ -33,12 +33,14 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
-          #try to force sqlx offline mode
-          SQLX_OFFLINE: true
+
         # When you map ports using the ports keyword, GitHub uses the --publish command to publish the container’s ports to the Docker host
         # Opens tcp port 5432 on the host and service container
         ports:
           - 5432:5432
+    env:
+      #try to force sqlx offline mode
+      SQLX_OFFLINE: true
     steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
@@ -124,9 +126,11 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
-          SQLX_OFFLINE: true
+
         ports:
           - 5432:5432
+    env:
+      SQLX_OFFLINE: true
     steps:
       - uses: actions/checkout@v4
       - name: Install the Rust toolchain
