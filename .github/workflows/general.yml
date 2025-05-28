@@ -74,6 +74,9 @@ jobs:
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
+      # attempt to debug sqlx offline mode workflow bug
+      - name: List .sqlx content
+        run: ls -la .sqlx || echo "No .sqlx directory"
 
       - name: Run tests
         run: cargo test
