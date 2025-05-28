@@ -39,8 +39,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      #try to force sqlx offline mode
-      SQLX_OFFLINE: true
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
     steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
@@ -74,9 +73,6 @@ jobs:
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
-      # attempt to debug sqlx offline mode workflow bug
-      - name: List .sqlx content
-        run: ls -la .sqlx || echo "No .sqlx directory"
 
       - name: Run tests
         run: cargo test
@@ -133,7 +129,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      SQLX_OFFLINE: true
+      DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
     steps:
       - uses: actions/checkout@v4
       - name: Install the Rust toolchain
