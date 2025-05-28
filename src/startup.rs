@@ -1,8 +1,8 @@
 use crate::routes;
 use actix_web::dev::Server;
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer, web};
+use sqlx::PgPool;
 use std::net::TcpListener;
-use sqlx::{PgPool};
 use tracing_actix_web::TracingLogger;
 
 pub fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Server, std::io::Error> {
@@ -11,7 +11,7 @@ pub fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Server, std
             std::env::set_var("RUST_LOG", "actix_web=trace");
         }
     }
-    
+
     let connection_pool = web::Data::new(connection_pool);
 
     let server = HttpServer::new(move || {

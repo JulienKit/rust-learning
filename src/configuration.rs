@@ -3,7 +3,7 @@ use serde_aux::field_attributes::deserialize_number_from_string;
 #[derive(serde::Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
-    pub application: ApplicationSettings
+    pub application: ApplicationSettings,
 }
 
 #[derive(serde::Deserialize)]
@@ -20,19 +20,19 @@ pub struct DatabaseSettings {
 pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
-    pub host: String
+    pub host: String,
 }
 
 enum Environment {
     Local,
-    Production
+    Production,
 }
 
 impl Environment {
     pub fn as_str(&self) -> &'static str {
         match &self {
             Environment::Local => "local",
-            Environment::Production => "production"
+            Environment::Production => "production",
         }
     }
 }
@@ -40,16 +40,13 @@ impl Environment {
 impl TryFrom<String> for Environment {
     type Error = String;
     fn try_from(s: String) -> Result<Self, Self::Error> {
-
         match s.to_lowercase().as_str() {
             "local" => Ok(Environment::Local),
             "production" => Ok(Environment::Production),
-            other => {
-                Err(format!(
-                    "invalid \"{}\" environment variable, must be either 'local' or 'production'",
-                    other
-                ))
-            }
+            other => Err(format!(
+                "invalid \"{}\" environment variable, must be either 'local' or 'production'",
+                other
+            )),
         }
     }
 }
@@ -76,17 +73,34 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir().expect("Failed to get current directory.");
     let configuration_directory = base_path.join("configuration");
 
-    let settings = Config::builder()
-        .add_source(config::File::with_name(configuration_directory.join("base.yml").as_path().to_str().unwrap()).required(true));
+    let settings = Config::builder().add_source(
+        config::File::with_name(
+            configuration_directory
+                .join("base.yml")
+                .as_path()
+                .to_str()
+                .unwrap(),
+        )
+        .required(true),
+    );
 
     let environment: Environment = std::env::var("APP_ENVIRONMENT")
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT.");
-    
-    settings.add_source(config::File::with_name(configuration_directory.join(environment.as_str()).as_path().to_str().unwrap()).required(true))
+
+    settings
+        .add_source(
+            config::File::with_name(
+                configuration_directory
+                    .join(environment.as_str())
+                    .as_path()
+                    .to_str()
+                    .unwrap(),
+            )
+            .required(true),
+        )
         .add_source(config::Environment::with_prefix("APP").separator("__"))
         .build()?
         .try_deserialize()
 }
-

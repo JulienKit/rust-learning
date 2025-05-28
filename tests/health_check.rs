@@ -1,11 +1,11 @@
 use learning::configuration::{DatabaseSettings, get_configuration};
 use learning::startup;
+use learning::telemetry::{get_subscriber, init_subscriber};
+use once_cell::sync::Lazy;
 use reqwest::Client;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
-use learning::telemetry::{init_subscriber, get_subscriber};
-use once_cell::sync::Lazy;
 
 static TRACING: Lazy<()> = Lazy::new(|| {
     let default_filter_level = "info".to_string();
@@ -18,12 +18,11 @@ static TRACING: Lazy<()> = Lazy::new(|| {
         let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::sink);
         init_subscriber(subscriber);
     };
-
 });
 
 struct TestApp {
     address: String,
-    db_pool: PgPool
+    db_pool: PgPool,
 }
 async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
@@ -38,7 +37,7 @@ async fn spawn_app() -> TestApp {
     let _ = actix_rt::spawn(server);
     TestApp {
         address: format!("http://127.0.0.1:{}", port),
-        db_pool: connection
+        db_pool: connection,
     }
 }
 
