@@ -1,12 +1,12 @@
 use config::Config;
 use serde_aux::field_attributes::deserialize_number_from_string;
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: String,
@@ -16,7 +16,7 @@ pub struct DatabaseSettings {
     pub database_name: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
@@ -73,23 +73,22 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir().expect("Failed to get current directory.");
     let configuration_directory = base_path.join("configuration");
 
-    let settings = Config::builder().add_source(
-        config::File::with_name(
-            configuration_directory
-                .join("base.yml")
-                .as_path()
-                .to_str()
-                .unwrap(),
-        )
-        .required(true),
-    );
-
     let environment: Environment = std::env::var("APP_ENVIRONMENT")
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT.");
 
-    settings
+    Config::builder()
+        .add_source(
+            config::File::with_name(
+                configuration_directory
+                    .join("base.yml")
+                    .as_path()
+                    .to_str()
+                    .unwrap(),
+            )
+            .required(true),
+        )
         .add_source(
             config::File::with_name(
                 configuration_directory
@@ -100,7 +99,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
             )
             .required(true),
         )
-        .add_source(config::Environment::with_prefix("APP").separator("__"))
+        .add_source(config::Environment::with_prefix("APP").separator("_"))
         .build()?
         .try_deserialize()
 }

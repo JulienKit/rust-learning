@@ -11,6 +11,8 @@ async fn main() -> std::io::Result<()> {
     let subscriber = get_subscriber("learning".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to read configuration.");
+
+    println!("configuration = {:?}", &configuration);
     let db_pool = PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(2))
         .connect_lazy(&configuration.database.connection_string())
@@ -19,6 +21,9 @@ async fn main() -> std::io::Result<()> {
         "{}:{}",
         configuration.application.host, configuration.application.port
     );
-    let listener = TcpListener::bind(address).expect("Failed to bind 8080 port.");
+    let prepared_expect_msg = format!("Failed to bind {} to listener", &address);
+
+    let listener = TcpListener::bind(&address).expect(&prepared_expect_msg);
+
     startup::run(listener, db_pool)?.await
 }

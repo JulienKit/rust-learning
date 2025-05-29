@@ -1,7 +1,7 @@
 name: rust-learning
 services:
   database:
-    container_name: cyberpal_postgres
+    container_name: rust-learning-db
     image: postgres
     #   restart: always
     env_file:
@@ -22,14 +22,14 @@ services:
   api:
     container_name: rust-learning
     image: rust-learning
-    env_file:
-      - .env
     environment:
-      APP_DATABASE__DATABASE_HOST: database
-      APP_DATABASE__DATABASE_USER: ${DB_USER}
-      APP_DATABASE__DATABASE_PASSWORD: ${DB_PASS}
-      APP_DATABASE__DATABASE_NAME: ${DB_NAME}
-      SERVER_PORT: ${SERVER_PORT}
+      APP_ENVIRONMENT: production
+      APP_DATABASE_HOST: DATABASE
+      APP_DATABASE_USERNAME: ${DB_USER}
+      APP_DATABASE_PASSWORD: ${DB_PASS}
+      APP_DATABASE_DATABASE_NAME: ${DB_NAME}
+      APP_DATABASE_PORT: 5432
+      APP_DATABASE_DEBUG: TRUE
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
     depends_on:

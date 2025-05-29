@@ -18,7 +18,7 @@ COPY . .
 ENV SQLX_OFFLINE=true
 RUN cargo build --release --bin learning
 
-FROM debian:bullseye-slim AS runtime
+FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 RUN apt-get update -y \
@@ -28,7 +28,6 @@ RUN apt-get update -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/learning learning
-
 COPY configuration configuration
-ENV APP_ENVIRONMENT=production
-ENTRYPOINT ["./target/release/learning"]
+
+ENTRYPOINT ["./learning"]
