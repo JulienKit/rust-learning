@@ -102,7 +102,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 }
 
 #[actix_web::test]
-async fn subscribe_returns_a_400_when_data_is_missing() {
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     let client = Client::new();
     let app = spawn_app().await;
     let test_cases = vec![

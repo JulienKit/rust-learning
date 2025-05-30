@@ -1,10 +1,8 @@
-mod routes;
-mod startup;
-use crate::configuration::get_configuration;
-use std::net::TcpListener;
-mod configuration;
+use learning::configuration::get_configuration;
+use learning::startup;
 use learning::telemetry::{get_subscriber, init_subscriber};
 use sqlx::postgres::PgPoolOptions;
+use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
