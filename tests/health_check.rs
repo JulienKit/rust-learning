@@ -1,4 +1,5 @@
 use learning::configuration::{DatabaseSettings, get_configuration};
+use learning::email_client::EmailClient;
 use learning::startup;
 use learning::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
@@ -33,8 +34,23 @@ async fn spawn_app() -> TestApp {
     configuration.database.database_name = Uuid::new_v4().to_string();
     let port = listener.local_addr().unwrap().port();
     let connection = configure_database(&configuration.database).await;
-    let server = startup::run(listener, connection.clone()).expect("Failed to bind address");
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+    let timeout = configuration.email_client.timeout();
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        timeout,
+    );
+
+    let server =
+        startup::run(listener, connection.clone(), email_client).expect("Failed to bind address");
     let _ = actix_rt::spawn(server);
+
     TestApp {
         address: format!("http://127.0.0.1:{}", port),
         db_pool: connection,

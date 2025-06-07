@@ -28,6 +28,7 @@ impl AsRef<str> for SubscriberName {
 mod tests {
     use crate::domain::subscriber_name::SubscriberName;
     use claim::{assert_err, assert_ok};
+    
 
     #[test]
     fn a_256_grapheme_long_name_is_valid() {

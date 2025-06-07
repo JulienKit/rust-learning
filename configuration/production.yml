@@ -1,2 +1,5 @@
 application:
   host: 0.0.0.0
+email_client:
+  base_url: "send.api.mailtrap.io"
+  sender_email: "hello@demomailtrap.co"

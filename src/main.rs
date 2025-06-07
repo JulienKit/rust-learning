@@ -3,6 +3,7 @@ use learning::startup;
 use learning::telemetry::{get_subscriber, init_subscriber};
 use sqlx::postgres::PgPoolOptions;
 use std::net::TcpListener;
+use learning::email_client::EmailClient;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -22,6 +23,14 @@ async fn main() -> std::io::Result<()> {
     let prepared_expect_msg = format!("Failed to bind {} to listener", &address);
 
     let listener = TcpListener::bind(&address).expect(&prepared_expect_msg);
+    let timeout = configuration.email_client.timeout();
+    let sender_email = configuration.email_client.sender().expect("Invalid sender email address.");
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        timeout
+    );
 
-    startup::run(listener, db_pool)?.await
+    startup::run(listener, db_pool, email_client)?.await
 }
