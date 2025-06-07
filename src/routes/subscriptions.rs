@@ -14,7 +14,7 @@ impl TryFrom<FormData> for NewSubscriber {
     fn try_from(value: FormData) -> Result<Self, Self::Error> {
         let name = SubscriberName::parse(value.name)?;
         let email = SubscriberEmail::parse(value.email)?;
-        Ok(Self {email, name})
+        Ok(Self { email, name })
     }
 }
 
@@ -32,7 +32,7 @@ async fn subscribe(form: web::Form<FormData>, db_pool: web::Data<PgPool>) -> imp
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
-    
+
     match insert_subscriber(&db_pool, &new_subscriber).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),

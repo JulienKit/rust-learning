@@ -16,10 +16,7 @@ impl EmailClient {
         authorization_token: SecretBox<String>,
         timeout: std::time::Duration,
     ) -> Self {
-        let http_client = Client::builder()
-            .timeout(timeout)
-            .build()
-            .unwrap();
+        let http_client = Client::builder().timeout(timeout).build().unwrap();
         Self {
             http_client,
             base_url,
@@ -52,15 +49,14 @@ impl EmailClient {
             html: html_content,
         };
 
-        let builder = self
-            .http_client
+        self.http_client
             .post(&url)
             .header("Api-Token", self.authorization_token.expose_secret())
             .json(&request_body)
             .send()
             .await?
             .error_for_status()?;
-        
+
         Ok(())
     }
 }
@@ -126,7 +122,12 @@ mod tests {
     }
 
     fn email_client(base_url: String) -> EmailClient {
-        EmailClient::new(base_url, email(), SecretBox::new(Faker.fake()), std::time::Duration::from_millis(200))
+        EmailClient::new(
+            base_url,
+            email(),
+            SecretBox::new(Faker.fake()),
+            std::time::Duration::from_millis(200),
+        )
     }
     #[actix_web::test]
     async fn send_email_sends_the_expected_request() {

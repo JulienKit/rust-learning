@@ -1,12 +1,16 @@
+use crate::email_client::EmailClient;
 use crate::routes;
 use actix_web::dev::Server;
 use actix_web::{App, HttpServer, web};
 use sqlx::PgPool;
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
-use crate::email_client::EmailClient;
 
-pub fn run(listener: TcpListener, connection_pool: PgPool, email_client: EmailClient) -> Result<Server, std::io::Error> {
+pub fn run(
+    listener: TcpListener,
+    connection_pool: PgPool,
+    email_client: EmailClient,
+) -> Result<Server, std::io::Error> {
     if std::env::var_os("RUST_LOG").is_none() {
         unsafe {
             std::env::set_var("RUST_LOG", "actix_web=trace");
