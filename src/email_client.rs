@@ -1,19 +1,19 @@
 use crate::domain::SubscriberEmail;
 use reqwest::Client;
-use secrecy::{ExposeSecret, SecretBox};
+use secrecy::{ExposeSecret, Secret};
 
 pub struct EmailClient {
     sender: SubscriberEmail,
     http_client: reqwest::Client,
     base_url: String,
-    authorization_token: SecretBox<String>,
+    authorization_token: Secret<String>,
 }
 
 impl EmailClient {
     pub fn new(
         base_url: String,
         sender: SubscriberEmail,
-        authorization_token: SecretBox<String>,
+        authorization_token: Secret<String>,
         timeout: std::time::Duration,
     ) -> Self {
         let http_client = Client::builder().timeout(timeout).build().unwrap();
@@ -34,17 +34,17 @@ impl EmailClient {
         let url = format!("{}/email", self.base_url);
         let from_address = EmailAddress {
             email: self.sender.as_ref(),
-            name: "sender".into(),
+            name: "sender",
         };
         let to_address = EmailAddress {
             email: recipient.as_ref(),
-            name: "receiver".into(),
+            name: "receiver",
         };
 
         let request_body = SendEmailRequest {
             to: Vec::from([to_address]),
             from: Vec::from([from_address]),
-            subject: subject,
+            subject,
             text: text_content,
             html: html_content,
         };
@@ -86,7 +86,7 @@ mod tests {
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
-    use secrecy::SecretBox;
+    use secrecy::Secret;
     use wiremock::Request;
     use wiremock::matchers::{any, header, header_exists, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -125,7 +125,7 @@ mod tests {
         EmailClient::new(
             base_url,
             email(),
-            SecretBox::new(Faker.fake()),
+            Secret::new(Faker.fake()),
             std::time::Duration::from_millis(200),
         )
     }

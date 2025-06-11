@@ -1,9 +1,6 @@
 use learning::configuration::get_configuration;
-use learning::email_client::EmailClient;
-use learning::startup;
+use learning::startup::Application;
 use learning::telemetry::{get_subscriber, init_subscriber};
-use sqlx::postgres::PgPoolOptions;
-use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -11,29 +8,7 @@ async fn main() -> std::io::Result<()> {
     init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to read configuration.");
 
-    println!("configuration = {:?}", &configuration);
-    let db_pool = PgPoolOptions::new()
-        .acquire_timeout(std::time::Duration::from_secs(2))
-        .connect_lazy(&configuration.database.connection_string())
-        .expect("Failed to connect to Postgres database");
-    let address = format!(
-        "{}:{}",
-        configuration.application.host, configuration.application.port
-    );
-    let prepared_expect_msg = format!("Failed to bind {} to listener", &address);
-
-    let listener = TcpListener::bind(&address).expect(&prepared_expect_msg);
-    let timeout = configuration.email_client.timeout();
-    let sender_email = configuration
-        .email_client
-        .sender()
-        .expect("Invalid sender email address.");
-    let email_client = EmailClient::new(
-        configuration.email_client.base_url,
-        sender_email,
-        configuration.email_client.authorization_token,
-        timeout,
-    );
-
-    startup::run(listener, db_pool, email_client)?.await
+    let application = Application::build(configuration).await?;
+    application.run_until_stopped().await?;
+    Ok(())
 }
