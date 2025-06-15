@@ -4,6 +4,7 @@ use actix_web::{HttpResponse, post, web};
 use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
+use crate::startup::ApplicationBaseUrl;
 
 #[derive(serde::Deserialize)]
 struct FormData {
@@ -23,7 +24,7 @@ impl TryFrom<FormData> for NewSubscriber {
 #[post("/subscriptions")]
 #[tracing::instrument(
     name="Adding a new subscriber",
-    skip(form, db_pool),
+    skip(form, db_pool, base_url),
     fields(
     subscriber_email = %form.email,
     subscriber_name = %form.name
@@ -33,7 +34,9 @@ async fn subscribe(
     form: web::Form<FormData>,
     db_pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
+    base_url: web::Data<ApplicationBaseUrl>
 ) -> HttpResponse {
+
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
@@ -43,7 +46,7 @@ async fn subscribe(
         return HttpResponse::InternalServerError().finish();
     }
 
-    if send_confirmation_email(&email_client, new_subscriber)
+    if send_confirmation_email(&email_client, new_subscriber, &base_url.0)
         .await
         .is_err()
     {
@@ -59,8 +62,10 @@ async fn subscribe(
 pub async fn send_confirmation_email(
     email_client: &EmailClient,
     new_subscriber: NewSubscriber,
+    base_url: &str
 ) -> Result<(), reqwest::Error> {
-    let confirmation_link = "https//my-api.com/subscriptions/confirm";
+    dbg!(&base_url);
+    let confirmation_link = format!("{base_url}/subscriptions/confirm?subscription_token=mytoken");
     let plain_body = format!(
         "Welcome to our newsletter!<br />\
             Click <a href=\"{confirmation_link}\">here</a> to confirm your subscription."
@@ -84,7 +89,7 @@ async fn insert_subscriber(
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
-        INSERT INTO subscriptions (id, email, name, subscribed_at, status) VALUES ($1, $2, $3, $4, 'confirmed');"#,
+        INSERT INTO subscriptions (id, email, name, subscribed_at, status) VALUES ($1, $2, $3, $4, 'pending_confirmation');"#,
         Uuid::new_v4(),
         new_subscriber.email.as_ref(),
         new_subscriber.name.as_ref(),
