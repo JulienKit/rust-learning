@@ -33,6 +33,7 @@ fake = "~2.3"
 quickcheck = "0.9.2"
 quickcheck_macros = "0.9.1"
 reqwest = { version = "0.12.15", default-features = false, features = ["json", "rustls-tls"] }
+linkify = "0.10.0"
 [dependencies.sqlx]
 version="0.8.6"
 default-features = false
@@ -42,6 +43,7 @@ features = ["runtime-tokio-rustls",
 "uuid",
 "chrono",
 "migrate"]
+
 
 [dev-dependencies]
 tokio = {version = "1.45.1", features = ["rt", "macros"]}
