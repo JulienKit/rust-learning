@@ -5,7 +5,7 @@ async fn health_check_works() {
     let app = spawn_app().await;
 
     let response = Client::new()
-        .get(&format!("{}/healthcheck", &app.address))
+        .get(format!("{}/healthcheck", &app.address))
         .send()
         .await
         .expect("Failed to execute request.");

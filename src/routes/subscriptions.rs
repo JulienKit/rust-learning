@@ -18,7 +18,7 @@ impl TryFrom<FormData> for NewSubscriber {
     }
 }
 
-#[post("/subscribe")]
+#[post("/subscriptions")]
 #[tracing::instrument(
     name="Adding a new subscriber",
     skip(form, db_pool),
