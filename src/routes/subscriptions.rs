@@ -1,10 +1,10 @@
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 use crate::email_client::EmailClient;
+use crate::startup::ApplicationBaseUrl;
 use actix_web::{HttpResponse, post, web};
 use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::startup::ApplicationBaseUrl;
 
 #[derive(serde::Deserialize)]
 struct FormData {
@@ -34,9 +34,8 @@ async fn subscribe(
     form: web::Form<FormData>,
     db_pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
-    base_url: web::Data<ApplicationBaseUrl>
+    base_url: web::Data<ApplicationBaseUrl>,
 ) -> HttpResponse {
-
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
@@ -62,7 +61,7 @@ async fn subscribe(
 pub async fn send_confirmation_email(
     email_client: &EmailClient,
     new_subscriber: NewSubscriber,
-    base_url: &str
+    base_url: &str,
 ) -> Result<(), reqwest::Error> {
     dbg!(&base_url);
     let confirmation_link = format!("{base_url}/subscriptions/confirm?subscription_token=mytoken");

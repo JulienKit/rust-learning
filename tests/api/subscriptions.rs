@@ -14,7 +14,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 
     let response = app.post_subscriptions(body.into()).await;
 
-     assert_eq!(200, response.status().as_u16());
+    assert_eq!(200, response.status().as_u16());
 }
 
 #[actix_web::test]
@@ -30,7 +30,7 @@ async fn subscribe_persists_the_new_subscriber() {
 
     // Act
     app.post_subscriptions(body.into()).await;
-    
+
     // Assert
     let saved = sqlx::query!("SELECT email, name, status FROM subscriptions")
         .fetch_one(&app.db_pool)

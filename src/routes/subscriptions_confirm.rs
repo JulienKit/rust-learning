@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, web, Responder, get};
+use actix_web::{HttpResponse, Responder, get, web};
 
 #[derive(serde::Deserialize)]
 pub struct Parameters {
