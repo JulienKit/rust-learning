@@ -1,10 +1,11 @@
+use argon2::password_hash::SaltString;
+use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
 use learning::configuration::{DatabaseSettings, get_configuration};
 use learning::startup::{Application, get_connection_pool};
 use learning::telemetry::{get_subscriber, init_subscriber};
 use linkify::{LinkFinder, LinkKind};
 use once_cell::sync::Lazy;
 use reqwest::Url;
-use sha3::Digest;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -33,7 +34,7 @@ pub struct TestApp {
     pub port: u16,
     pub db_pool: PgPool,
     pub email_server: MockServer,
-    test_user: TestUser,
+    pub test_user: TestUser,
 }
 
 impl TestApp {
@@ -149,11 +150,16 @@ impl TestUser {
     }
 
     async fn store(&self, pool: &PgPool) {
-        let password_hash = sha3::Sha3_256::digest(self.password.as_bytes());
-        let password_hash = password_hash
-            .iter()
-            .map(|byte| format!("{:02x}", byte))
-            .collect::<String>();
+        let salt = SaltString::from_rng(&mut rand::rng());
+        let password_hash = Argon2::new(
+            Algorithm::Argon2id,
+            Version::V0x13,
+            Params::new(15000, 2, 1, None).unwrap(),
+        )
+        .hash_password(self.password.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
+
         sqlx::query!(
             "INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)",
             self.user_id,
