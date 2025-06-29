@@ -3,7 +3,7 @@ use learning::startup::Application;
 use learning::telemetry::{get_subscriber, init_subscriber};
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let subscriber = get_subscriber("learning".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to read configuration.");
