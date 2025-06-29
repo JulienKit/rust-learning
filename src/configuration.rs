@@ -69,8 +69,7 @@ impl TryFrom<String> for Environment {
             "local" => Ok(Environment::Local),
             "production" => Ok(Environment::Production),
             other => Err(format!(
-                "invalid \"{}\" environment variable, must be either 'local' or 'production'",
-                other
+                "invalid \"{other}\" environment variable, must be either 'local' or 'production'"
             )),
         }
     }
