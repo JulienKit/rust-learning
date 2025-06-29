@@ -1,5 +1,7 @@
+redis_uri: "redis://127.0.0.1:6379"
 application:
   port: 8000
+  hmac_secret: "Backside7-Deceptive4-Overboard6-Violation3-Bulginess2-Manned0-Grumble6-Retouch7-Comma8-Proton2"
 database:
   host: "localhost"
   port: 5432

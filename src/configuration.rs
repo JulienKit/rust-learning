@@ -8,6 +8,7 @@ pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
     pub email_client: EmailClientSettings,
+    pub redis_uri: Secret<String>,
 }
 
 #[derive(Debug, serde::Deserialize, Clone)]
@@ -25,6 +26,8 @@ pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
+    pub base_url: String,
+    pub hmac_secret: Secret<String>,
 }
 
 #[derive(serde::Deserialize, Debug, Clone)]
@@ -66,8 +69,7 @@ impl TryFrom<String> for Environment {
             "local" => Ok(Environment::Local),
             "production" => Ok(Environment::Production),
             other => Err(format!(
-                "invalid \"{}\" environment variable, must be either 'local' or 'production'",
-                other
+                "invalid \"{other}\" environment variable, must be either 'local' or 'production'"
             )),
         }
     }

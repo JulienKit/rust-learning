@@ -38,6 +38,10 @@ jobs:
         # Opens tcp port 5432 on the host and service container
         ports:
           - 5432:5432
+      redis:
+        image: redis:8.2-m01-bookworm
+        ports:
+          - 6379:6379
     env:
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
     steps:
@@ -128,6 +132,10 @@ jobs:
 
         ports:
           - 5432:5432
+      redis:
+        image: redis:8.2-m01-bookworm
+        ports:
+          - 6379:6379
     env:
       DATABASE_URL: postgres://postgres:password@localhost:5432/newsletter
     steps:
