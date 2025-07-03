@@ -43,6 +43,13 @@ htmlescape = "0.3.1"
 actix-web-flash-messages = { version = "0.5.0", features = ["cookies"] }
 actix-session = { version = "0.10.1", features = ["redis-session-native-tls"] }
 serde_json = "1.0.140"
+opentelemetry-instrumentation-actix-web = "0.22.0"
+opentelemetry-semantic-conventions = "0.30.0"
+opentelemetry-otlp = { version = "0.30.0", features = ["grpc-tonic"] }
+opentelemetry_sdk = { version = "0.30.0", features = ["rt-tokio"] }
+opentelemetry = "0.30.0"
+tracing-opentelemetry = "0.31.0"
+
 
 [dependencies.sqlx]
 version="0.8.6"
