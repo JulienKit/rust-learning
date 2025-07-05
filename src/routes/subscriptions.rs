@@ -120,7 +120,6 @@ pub async fn send_confirmation_email(
     base_url: &str,
     subscription_token: &str,
 ) -> Result<(), reqwest::Error> {
-    dbg!(&base_url);
     let confirmation_link =
         format!("{base_url}/subscriptions/confirm?subscription_token={subscription_token}");
     let plain_body = format!(

@@ -73,9 +73,9 @@ impl TestApp {
         newsletter_request_body: &serde_json::Value,
     ) -> reqwest::Response {
         self.api_client
-            .post(format!("{}/newsletters", &self.address))
+            .post(format!("{}/admin/newsletters", &self.address))
             .basic_auth(&self.test_user.username, Some(&self.test_user.password))
-            .json(&newsletter_request_body)
+            .form(&newsletter_request_body)
             .send()
             .await
             .expect("Failed to execute request.")
@@ -114,6 +114,55 @@ impl TestApp {
 
     pub async fn get_admin_dashboard_html(&self) -> String {
         self.get_admin_dashboard().await.text().await.unwrap()
+    }
+
+    pub async fn get_change_password(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/password", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn post_change_password<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.api_client
+            .post(&format!("{}/admin/password", &self.address))
+            .form(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_change_password_html(&self) -> String {
+        self.get_change_password().await.text().await.unwrap()
+    }
+
+    pub async fn post_logout(&self) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/admin/logout", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_publish_newsletter_form(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/newsletters", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
+    #[allow(dead_code)]
+    pub async fn get_publish_newsletter_html(&self) -> String {
+        self.get_publish_newsletter_form()
+            .await
+            .text()
+            .await
+            .unwrap()
     }
 }
 pub async fn spawn_app() -> TestApp {
@@ -202,8 +251,6 @@ impl TestUser {
         .unwrap()
         .to_string();
 
-        dbg!(&password_hash);
-
         sqlx::query!(
             "INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)",
             self.user_id,
@@ -213,6 +260,14 @@ impl TestUser {
         .execute(pool)
         .await
         .expect("Failed to store test user.");
+    }
+    #[allow(dead_code)]
+    pub async fn login(&self, app: &TestApp) {
+        app.post_login(&serde_json::json!({
+            "username": &self.username,
+            "password": &self.password
+        }))
+        .await;
     }
 }
 

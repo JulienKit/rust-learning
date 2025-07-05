@@ -1,3 +1,4 @@
+use crate::authentication::reject_anonymous_users;
 use crate::configuration::DatabaseSettings;
 use crate::configuration::Settings;
 use crate::email_client::EmailClient;
@@ -6,6 +7,7 @@ use actix_session::SessionMiddleware;
 use actix_session::storage::RedisSessionStore;
 use actix_web::cookie::Key;
 use actix_web::dev::Server;
+use actix_web::middleware::from_fn;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer, web};
 use actix_web_flash_messages::FlashMessagesFramework;
@@ -95,6 +97,7 @@ pub async fn run(
     let message_store = CookieMessageStore::builder(secret_key.clone()).build();
     let message_framework = FlashMessagesFramework::builder(message_store).build();
     let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
+
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
@@ -106,11 +109,19 @@ pub async fn run(
             .service(routes::healthcheck)
             .service(routes::subscribe)
             .service(routes::confirm)
-            .service(routes::publish_newsletter)
             .service(routes::index)
             .service(routes::login_form)
             .service(routes::login_post)
-            .service(routes::admin_dashboard)
+            .service(
+                web::scope("/admin")
+                    .wrap(from_fn(reject_anonymous_users))
+                    .service(routes::admin_dashboard)
+                    .service(routes::change_password)
+                    .service(routes::change_password_form)
+                    .service(routes::log_out)
+                    .service(routes::publish_newsletter_form)
+                    .service(routes::publish_newsletter),
+            )
             .app_data(connection_pool.clone())
             .app_data(email_client.clone())
             .app_data(base_url.clone())
