@@ -1,6 +1,8 @@
 use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
 use learning::configuration::{DatabaseSettings, get_configuration};
+use learning::email_client::EmailClient;
+use learning::issue_delivery_worker::{ExecutionOutcome, try_execute_task};
 use learning::startup::{Application, get_connection_pool};
 use learning::telemetry::{get_subscriber, init_subscriber};
 use linkify::{LinkFinder, LinkKind};
@@ -36,6 +38,7 @@ pub struct TestApp {
     pub email_server: MockServer,
     pub test_user: TestUser,
     pub api_client: reqwest::Client,
+    pub email_client: EmailClient,
 }
 
 impl TestApp {
@@ -164,6 +167,18 @@ impl TestApp {
             .await
             .unwrap()
     }
+
+    pub async fn dispatch_all_pending_emails(&self) {
+        loop {
+            if let ExecutionOutcome::EmptyQueue =
+                try_execute_task(&self.db_pool, &self.email_client)
+                    .await
+                    .unwrap()
+            {
+                break;
+            }
+        }
+    }
 }
 pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
@@ -200,6 +215,7 @@ pub async fn spawn_app() -> TestApp {
         email_server,
         test_user: TestUser::generate(),
         api_client,
+        email_client: configuration.email_client.client(),
     };
     test_app.test_user.store(&test_app.db_pool).await;
     test_app
