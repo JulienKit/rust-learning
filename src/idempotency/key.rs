@@ -27,4 +27,3 @@ impl AsRef<str> for IdempotencyKey {
         &self.0
     }
 }
-

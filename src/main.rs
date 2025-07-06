@@ -1,8 +1,8 @@
-use std::fmt::{Debug, Display};
 use learning::configuration::get_configuration;
 use learning::issue_delivery_worker::run_worker_until_stopped;
 use learning::startup::Application;
 use learning::telemetry::{get_subscriber, init_subscriber};
+use std::fmt::{Debug, Display};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
 
 fn report_exit(
     task_name: &str,
-    outcome: Result<Result<(), impl Debug + Display>, actix_rt::task::JoinError>
+    outcome: Result<Result<(), impl Debug + Display>, actix_rt::task::JoinError>,
 ) {
     match outcome {
         Ok(Ok(())) => {

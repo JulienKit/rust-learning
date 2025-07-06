@@ -1,11 +1,10 @@
 use crate::helpers::{ConfirmationLinks, TestApp, assert_is_redirect_to, spawn_app};
-use std::time::Duration;
 use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
+use std::time::Duration;
 use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, ResponseTemplate};
-
 
 #[actix_web::test]
 async fn you_must_be_logged_in_to_access_new_newsletter_form() {
@@ -44,7 +43,7 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
         "username": &app.test_user.username,
         "password": &app.test_user.password
     }))
-        .await;
+    .await;
 
     // Act - Part 2 - Post newsletters
     Mock::given(any())
@@ -76,7 +75,7 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
         "username": &app.test_user.username,
         "password": &app.test_user.password
     }))
-        .await;
+    .await;
 
     // Act - Part 2 - Post newsletters
     Mock::given(path("/email"))
@@ -107,7 +106,7 @@ async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
         "name": name,
         "email": email
     }))
-        .unwrap();
+    .unwrap();
 
     let _mock_guard = Mock::given(path("/email"))
         .and(method("POST"))
@@ -150,7 +149,7 @@ async fn newsletters_returns_400_for_invalid_data() {
         "username": &app.test_user.username,
         "password": &app.test_user.password
     }))
-        .await;
+    .await;
 
     // Act - Part 2 - Post newsletters
     let test_cases = vec![
@@ -255,5 +254,3 @@ async fn concurrent_form_submission_is_handled_gracefully() {
 
     app.dispatch_all_pending_emails().await;
 }
-
-

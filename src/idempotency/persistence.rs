@@ -1,10 +1,10 @@
-use std::ops::DerefMut;
+use crate::idempotency::IdempotencyKey;
+use actix_web::HttpResponse;
 use actix_web::body::to_bytes;
 use actix_web::http::StatusCode;
-use actix_web::HttpResponse;
 use sqlx::{PgPool, Postgres, Transaction};
+use std::ops::DerefMut;
 use uuid::Uuid;
-use crate::idempotency::IdempotencyKey;
 
 #[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "header_pair")]
@@ -32,13 +32,11 @@ pub async fn get_saved_response(
         user_id,
         idempotency_key.as_ref()
     )
-        .fetch_optional(pool)
-        .await?;
+    .fetch_optional(pool)
+    .await?;
 
     if let Some(r) = saved_response {
-        let status_code = StatusCode::from_u16(
-            r.response_status_code.try_into()?
-        )?;
+        let status_code = StatusCode::from_u16(r.response_status_code.try_into()?)?;
         let mut response = HttpResponse::build(status_code);
         for HeaderPairRecord { name, value } in r.response_headers {
             response.append_header((name, value));
@@ -53,7 +51,7 @@ pub async fn save_response(
     mut transaction: Transaction<'static, Postgres>,
     idempotency_key: &IdempotencyKey,
     user_id: Uuid,
-    http_response: HttpResponse
+    http_response: HttpResponse,
 ) -> Result<HttpResponse, anyhow::Error> {
     let (response_head, body) = http_response.into_parts();
     let body = to_bytes(body).await.map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -85,10 +83,10 @@ pub async fn save_response(
         headers,
         body.as_ref()
     )
-        .execute(transaction.deref_mut())
-        .await?;
+    .execute(transaction.deref_mut())
+    .await?;
     transaction.commit().await?;
-    
+
     let http_response = response_head.set_body(body).map_into_boxed_body();
     Ok(http_response)
 }
@@ -96,13 +94,13 @@ pub async fn save_response(
 #[allow(clippy::large_enum_variant)]
 pub enum NextAction {
     StartProcessing(Transaction<'static, Postgres>),
-    ReturnSavedResponse(HttpResponse)
+    ReturnSavedResponse(HttpResponse),
 }
 
 pub async fn try_processing(
     pool: &PgPool,
     idempotency_key: &IdempotencyKey,
-    user_id: Uuid
+    user_id: Uuid,
 ) -> Result<NextAction, anyhow::Error> {
     let mut transaction = pool.begin().await?;
     let n_inserted_rows = sqlx::query!(
@@ -118,17 +116,15 @@ pub async fn try_processing(
         user_id,
         idempotency_key.as_ref()
     )
-        .execute(transaction.deref_mut())
-        .await?
-        .rows_affected();
+    .execute(transaction.deref_mut())
+    .await?
+    .rows_affected();
     if n_inserted_rows > 0 {
         Ok(NextAction::StartProcessing(transaction))
     } else {
         let saved_response = get_saved_response(pool, idempotency_key, user_id)
             .await?
-            .ok_or_else(||
-                anyhow::anyhow!("We expected a saved response, we didn’t find it")
-            )?;
+            .ok_or_else(|| anyhow::anyhow!("We expected a saved response, we didn’t find it"))?;
         Ok(NextAction::ReturnSavedResponse(saved_response))
     }
 }

@@ -1,5 +1,7 @@
+use crate::configuration::Settings;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
+use crate::startup::get_connection_pool;
 use actix_rt::time;
 use sqlx::{PgPool, Postgres};
 use std::ops::DerefMut;
@@ -7,8 +9,6 @@ use std::time::Duration;
 use tracing::Span;
 use tracing::field::display;
 use uuid::Uuid;
-use crate::configuration::Settings;
-use crate::startup::get_connection_pool;
 
 pub enum ExecutionOutcome {
     TaskCompleted,
@@ -149,9 +149,7 @@ async fn worker_loop(pool: PgPool, email_client: EmailClient) -> Result<(), anyh
     }
 }
 
-pub async fn run_worker_until_stopped(
-    configuration: Settings
-) -> Result<(), anyhow::Error> {
+pub async fn run_worker_until_stopped(configuration: Settings) -> Result<(), anyhow::Error> {
     let connection_pool = get_connection_pool(&configuration.database);
     let email_client = configuration.email_client.client();
     worker_loop(connection_pool, email_client).await

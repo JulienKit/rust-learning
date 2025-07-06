@@ -1,8 +1,8 @@
 use crate::domain::SubscriberEmail;
+use crate::email_client::EmailClient;
 use config::Config;
 use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
-use crate::email_client::EmailClient;
 
 #[derive(Debug, serde::Deserialize, Clone)]
 pub struct Settings {
@@ -39,7 +39,6 @@ pub struct EmailClientSettings {
     pub timeout_milliseconds: u64,
 }
 
-
 impl EmailClientSettings {
     pub fn sender(&self) -> Result<SubscriberEmail, String> {
         SubscriberEmail::parse(self.sender_email.clone())
@@ -52,7 +51,12 @@ impl EmailClientSettings {
     pub fn client(self) -> EmailClient {
         let sender_email = self.sender().expect("Invalid sender email address.");
         let timeout = self.timeout();
-        EmailClient::new(self.base_url, sender_email, self.authorization_token, timeout)
+        EmailClient::new(
+            self.base_url,
+            sender_email,
+            self.authorization_token,
+            timeout,
+        )
     }
 }
 

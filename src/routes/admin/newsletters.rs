@@ -1,5 +1,5 @@
-use std::ops::DerefMut;
 use crate::authentication::UserId;
+use crate::idempotency::{IdempotencyKey, NextAction, save_response, try_processing};
 use crate::routes::admin::dashboard::get_username;
 use crate::utils::{e400, e500, see_other};
 use actix_web::http::header::ContentType;
@@ -8,8 +8,8 @@ use actix_web::{HttpResponse, get, post, web};
 use actix_web_flash_messages::{FlashMessage, IncomingFlashMessages};
 use anyhow::Context;
 use sqlx::{PgPool, Postgres, Transaction};
+use std::ops::DerefMut;
 use uuid::Uuid;
-use crate::idempotency::{save_response, try_processing, IdempotencyKey, NextAction};
 
 fn success_message() -> FlashMessage {
     FlashMessage::info("The newsletter issue has been published!")
@@ -53,7 +53,7 @@ pub struct FormData {
     title: String,
     html_content: String,
     text_content: String,
-    idempotency_key: String
+    idempotency_key: String,
 }
 
 #[tracing::instrument(
@@ -84,10 +84,15 @@ pub async fn publish_newsletter(
             return Ok(saved_response);
         }
     };
-    let issue_id = insert_newsletter_issue(&mut transaction, &form.0.title, &form.0.text_content, &form.0.html_content)
-        .await
-        .context("Failed to insert newsletter issue")
-        .map_err(e500)?;
+    let issue_id = insert_newsletter_issue(
+        &mut transaction,
+        &form.0.title,
+        &form.0.text_content,
+        &form.0.html_content,
+    )
+    .await
+    .context("Failed to insert newsletter issue")
+    .map_err(e500)?;
 
     enqueue_delivery_tasks(&mut transaction, issue_id)
         .await
@@ -102,7 +107,6 @@ pub async fn publish_newsletter(
     success_message().send();
     Ok(response)
 }
-
 
 #[tracing::instrument(skip_all)]
 async fn insert_newsletter_issue(
