@@ -1,4 +1,4 @@
-use crate::routes::error_chain_fmt;
+use crate::routes::subscriptions::error_chain_fmt;
 use actix_web::{HttpResponse, ResponseError, get, web};
 use anyhow::Context;
 use sqlx::PgPool;

@@ -11,10 +11,14 @@ use sqlx::{PgPool, Postgres, Transaction};
 use std::ops::DerefMut;
 use uuid::Uuid;
 
+pub fn newsletters(cfg: &mut web::ServiceConfig) {
+    cfg.service(publish_newsletter_form)
+        .service(publish_newsletter);
+}
+
 fn success_message() -> FlashMessage {
     FlashMessage::info("The newsletter issue has been published!")
 }
-
 #[get("/newsletters")]
 pub async fn publish_newsletter_form(
     flash_messages: IncomingFlashMessages,
@@ -49,7 +53,7 @@ pub async fn publish_newsletter_form(
 }
 
 #[derive(serde::Deserialize)]
-pub struct FormData {
+struct FormData {
     title: String,
     html_content: String,
     text_content: String,
@@ -57,10 +61,10 @@ pub struct FormData {
 }
 
 #[tracing::instrument(
-    name = "Publish a newsletter issue",
-    skip(form, pool),
-    fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
-)]
+        name = "Publish a newsletter issue",
+        skip(form, pool),
+        fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
+    )]
 #[post("/newsletters")]
 pub async fn publish_newsletter(
     form: web::Form<FormData>,
@@ -117,17 +121,17 @@ async fn insert_newsletter_issue(
 ) -> Result<Uuid, sqlx::Error> {
     let newsletter_issue_id = Uuid::new_v4();
     sqlx::query!(
-        r#"
-        INSERT INTO newsletter_issues (newsletter_issue_id, title, text_content, html_content, published_at)
-        VALUES ($1, $2, $3, $4, now())
-        "#,
-        newsletter_issue_id,
-        title,
-        text_content,
-        html_content
-    )
-        .execute(transaction.deref_mut())
-        .await?;
+            r#"
+            INSERT INTO newsletter_issues (newsletter_issue_id, title, text_content, html_content, published_at)
+            VALUES ($1, $2, $3, $4, now())
+            "#,
+            newsletter_issue_id,
+            title,
+            text_content,
+            html_content
+        )
+            .execute(transaction.deref_mut())
+            .await?;
     Ok(newsletter_issue_id)
 }
 
@@ -138,11 +142,11 @@ async fn enqueue_delivery_tasks(
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
-        INSERT INTO issue_delivery_queue (newsletter_issue_id, subscriber_email)
-        SELECT $1, email
-        FROM subscriptions
-        WHERE status = 'confirmed'
-        "#,
+            INSERT INTO issue_delivery_queue (newsletter_issue_id, subscriber_email)
+            SELECT $1, email
+            FROM subscriptions
+            WHERE status = 'confirmed'
+            "#,
         newsletter_issue_id
     )
     .execute(transaction.deref_mut())
