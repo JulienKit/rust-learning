@@ -10,7 +10,7 @@ use actix_web::web::Data;
 use actix_web::{App, HttpServer, web};
 use actix_web_flash_messages::FlashMessagesFramework;
 use actix_web_flash_messages::storage::CookieMessageStore;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::net::TcpListener;
@@ -79,8 +79,8 @@ pub async fn run(
     connection_pool: PgPool,
     email_client: EmailClient,
     base_url: String,
-    hmac_secret: Secret<String>,
-    redis_uri: Secret<String>,
+    hmac_secret: SecretString,
+    redis_uri: SecretString,
 ) -> Result<Server, anyhow::Error> {
     if std::env::var_os("RUST_LOG").is_none() {
         unsafe {
@@ -117,4 +117,4 @@ pub async fn run(
 }
 
 #[derive(Clone, Debug)]
-pub struct HmacSecret(pub Secret<String>);
+pub struct HmacSecret(pub SecretString);

@@ -7,7 +7,7 @@ use actix_web::http::header::LOCATION;
 use actix_web::{HttpResponse, get, post, web};
 use actix_web_flash_messages::FlashMessage;
 use actix_web_flash_messages::IncomingFlashMessages;
-use secrecy::Secret;
+use secrecy::SecretString;
 use sqlx::PgPool;
 use std::fmt::Write;
 
@@ -57,7 +57,7 @@ name="password"
 #[derive(serde::Deserialize)]
 pub struct FormData {
     username: String,
-    password: Secret<String>,
+    password: SecretString,
 }
 
 #[tracing::instrument(

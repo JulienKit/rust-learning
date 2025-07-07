@@ -5,7 +5,7 @@ use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, get, post, web};
 use actix_web_flash_messages::FlashMessage;
 use actix_web_flash_messages::IncomingFlashMessages;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use sqlx::PgPool;
 
 pub fn password(cfg: &mut web::ServiceConfig) {
@@ -65,9 +65,9 @@ name="new_password_check"
 
 #[derive(serde::Deserialize)]
 struct FormData {
-    current_password: Secret<String>,
-    new_password: Secret<String>,
-    new_password_check: Secret<String>,
+    current_password: SecretString,
+    new_password: SecretString,
+    new_password_check: SecretString,
 }
 
 #[post("/password")]
