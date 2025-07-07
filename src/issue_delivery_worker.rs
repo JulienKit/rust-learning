@@ -1,10 +1,11 @@
 use crate::configuration::Settings;
-use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use crate::startup::get_connection_pool;
 use actix_rt::time;
+use email_address::EmailAddress;
 use sqlx::{PgPool, Postgres};
 use std::ops::DerefMut;
+use std::str::FromStr;
 use std::time::Duration;
 use tracing::Span;
 use tracing::field::display;
@@ -36,7 +37,7 @@ pub async fn try_execute_task(
     Span::current()
         .record("newsletters_issue_id", display(issue_id))
         .record("subscriber_email", display(&email));
-    match SubscriberEmail::parse(email.clone()) {
+    match EmailAddress::from_str(email.as_str()) {
         Ok(email) => {
             let issue = get_issue(pool, issue_id).await?;
             if let Err(e) = email_client

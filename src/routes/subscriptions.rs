@@ -1,14 +1,16 @@
-use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
+use crate::domain::{NewSubscriber, SubscriberName};
 use crate::email_client::EmailClient;
 use crate::startup::ApplicationBaseUrl;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError, post, web};
 use anyhow::Context;
 use chrono::Utc;
+use email_address::EmailAddress;
 use rand::distr::Alphanumeric;
 use rand::{Rng, rng};
 use sqlx::{PgPool, Postgres, Transaction};
 use std::ops::DerefMut;
+use std::str::FromStr;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
@@ -21,7 +23,7 @@ impl TryFrom<FormData> for NewSubscriber {
 
     fn try_from(value: FormData) -> Result<Self, Self::Error> {
         let name = SubscriberName::parse(value.name)?;
-        let email = SubscriberEmail::parse(value.email)?;
+        let email = EmailAddress::from_str(value.email.as_str()).map_err(|e| e.to_string())?;
         Ok(Self { email, name })
     }
 }

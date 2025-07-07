@@ -1,21 +1,22 @@
-use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use config::Config;
-use secrecy::{ExposeSecret, Secret};
+use email_address::EmailAddress;
+use secrecy::{ExposeSecret, SecretString};
 use serde_aux::field_attributes::deserialize_number_from_string;
+use std::str::FromStr;
 
 #[derive(Debug, serde::Deserialize, Clone)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
     pub email_client: EmailClientSettings,
-    pub redis_uri: Secret<String>,
+    pub redis_uri: SecretString,
 }
 
 #[derive(Debug, serde::Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
-    pub password: Secret<String>,
+    pub password: SecretString,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
@@ -28,20 +29,20 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub base_url: String,
-    pub hmac_secret: Secret<String>,
+    pub hmac_secret: SecretString,
 }
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
-    pub authorization_token: Secret<String>,
+    pub authorization_token: SecretString,
     pub timeout_milliseconds: u64,
 }
 
 impl EmailClientSettings {
-    pub fn sender(&self) -> Result<SubscriberEmail, String> {
-        SubscriberEmail::parse(self.sender_email.clone())
+    pub fn sender(&self) -> Result<EmailAddress, email_address::Error> {
+        EmailAddress::from_str(&self.sender_email)
     }
 
     pub fn timeout(&self) -> std::time::Duration {

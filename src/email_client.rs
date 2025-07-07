@@ -1,20 +1,20 @@
-use crate::domain::SubscriberEmail;
+use email_address::EmailAddress;
 use reqwest::Client;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 
 #[derive(Debug)]
 pub struct EmailClient {
-    sender: SubscriberEmail,
+    sender: EmailAddress,
     http_client: reqwest::Client,
     base_url: String,
-    authorization_token: Secret<String>,
+    authorization_token: SecretString,
 }
 
 impl EmailClient {
     pub fn new(
         base_url: String,
-        sender: SubscriberEmail,
-        authorization_token: Secret<String>,
+        sender: EmailAddress,
+        authorization_token: SecretString,
         timeout: std::time::Duration,
     ) -> Self {
         let http_client = Client::builder().timeout(timeout).build().unwrap();
@@ -27,17 +27,17 @@ impl EmailClient {
     }
     pub async fn send_email(
         &self,
-        recipient: &SubscriberEmail,
+        recipient: &EmailAddress,
         subject: &str,
         html_content: &str,
         text_content: &str,
     ) -> Result<(), reqwest::Error> {
         let url = format!("{}/email", self.base_url);
-        let from_address = EmailAddress {
+        let from_address = JsonEmailAddress {
             email: self.sender.as_ref(),
             name: "sender",
         };
-        let to_address = EmailAddress {
+        let to_address = JsonEmailAddress {
             email: recipient.as_ref(),
             name: "receiver",
         };
@@ -65,8 +65,8 @@ impl EmailClient {
 #[derive(serde::Serialize)]
 #[serde(rename_all = "PascalCase")]
 struct SendEmailRequest<'a> {
-    to: Vec<EmailAddress<'a>>,
-    from: Vec<EmailAddress<'a>>,
+    to: Vec<JsonEmailAddress<'a>>,
+    from: Vec<JsonEmailAddress<'a>>,
     subject: &'a str,
     text: &'a str,
     html: &'a str,
@@ -74,20 +74,21 @@ struct SendEmailRequest<'a> {
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "PascalCase")]
-struct EmailAddress<'a> {
+struct JsonEmailAddress<'a> {
     email: &'a str,
     name: &'a str,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::SubscriberEmail;
     use crate::email_client::EmailClient;
     use claim::{assert_err, assert_ok};
+    use email_address::EmailAddress;
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
-    use secrecy::Secret;
+    use secrecy::SecretString;
+    use std::str::FromStr;
     use wiremock::Request;
     use wiremock::matchers::{any, header, header_exists, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -117,15 +118,15 @@ mod tests {
         Sentence(1..10).fake()
     }
 
-    fn email() -> SubscriberEmail {
-        SubscriberEmail::parse(SafeEmail().fake()).unwrap()
+    fn email() -> EmailAddress {
+        EmailAddress::from_str(&SafeEmail().fake::<String>()).unwrap()
     }
 
     fn email_client(base_url: String) -> EmailClient {
         EmailClient::new(
             base_url,
             email(),
-            Secret::new(Faker.fake()),
+            SecretString::from(Faker.fake::<String>()),
             std::time::Duration::from_millis(200),
         )
     }
@@ -144,7 +145,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let subscriber_email = SubscriberEmail::parse("subrosaa67@gmail.com".into()).unwrap();
+        let subscriber_email = EmailAddress::from_str("subrosaa67@gmail.com").unwrap();
         let subject: String = Sentence(1..2).fake();
         let content: String = Paragraph(1..10).fake();
 
